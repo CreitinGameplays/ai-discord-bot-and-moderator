@@ -5,7 +5,7 @@ This is a simple Discord bot made in Python that uses [this API](https://api.fre
 It can:
 
 - The bot replies to the user when they mention, reply or say "youchat".
-- The bot uses [Vader sentiment analyzer](https://github.com/cjhutto/vaderSentiment) for detecting negative messages and apply moderation, if message was offensive or harmful.
+- The bot uses [VADER-Sentiment-Analysis](https://github.com/cjhutto/vaderSentiment) for detecting negative messages and apply moderation, if message was offensive or harmful.
 - The bot can detect badwords, deletes the user message and apply timeout automatically (but only if the user's message is intended to be offensive/harmful).
 - The bot can read chat history (but with limitations).
 - the bot can decide for itself how long the user will be in timeout, depending on the severity of the message.

@@ -1,7 +1,7 @@
 ﻿# Simple Discord Bot with AI and Moderation 
 [![Discord Server](https://dcbadge.vercel.app/api/server/pfa6RVxxUM?style=flat)](https://discord.gg/pfa6RVxxUM) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 # Uhhh what is this?
-This is a simple Discord bot made in Python that uses [this API](https://api.freegpt4.ddns.net/) (GPT-4) for text generation.
+This is a simple Discord bot made in Python that uses [this API](https://api.freegpt4.ddns.net/) (GPT-4) for text generation and automod.
 
 # Ok, what can it do?
 It can:

@@ -3,7 +3,7 @@
 # Uhhh what is this?
 This is a simple Discord bot made in Python that uses [this API](https://api.freegpt4.ddns.net/) (GPT-4) for text generation.
 
-# ok, what can it do?
+# Ok, what can it do?
 It can:
 
 - The bot replies to the user when they mention, reply or say "youchat".
@@ -58,16 +58,16 @@ role = "Server AI Assistant and Moderator you can only delete offensive/harmful 
 note = "PLEASE DO NOT generate large messages in chat."
 note_warn = "At the end of your message, say (ONLY in minutes) how long the user will be timed-out (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, PLEASE SAY 'Timeout-duration: 0 minutes', please. You can use Chat History for moderation."
 ```
-# limitations
+# Limitations
 - Bot doesn't work in DMs
 - Chat History is limited due character limit
 
-# why would I use this huh 
+# Why would I use this huh 
 
 it can be useful like if your server has few moderators or if they cannot be very active.
 yeah
 
-# why did i do this thing?
+# Why did i do this thing?
 
 idk I was bored and I had this idea lol.
 I did this whole code using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.

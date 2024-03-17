@@ -28,7 +28,7 @@ Regarding automatic moderation, not every message that the bot detects negative 
 ![Bot timedout the user](./examples/badword-block-1.png)
 
 # How to start?
-- Clone this repository
+- Clone this repository:
 ```sh
 git clone https://github.com/CreitinGameplays123/ai-discord-bot-and-moderator
 ```

@@ -14,6 +14,15 @@ Regarding automatic moderation, not every message that the bot detects is negati
 
 # Pictures examples
 - Sentiment analyzer:
+  
 ![Bot didn't block](./examples/sent-no-block.png)
+![Bot deleted the message](./examples/sent-block-0.png)
+![Bot timedout the user](./examples/sent-block-1.png)
+
+- Badwords filtering:
+
+![Bot didn't block](./examples/badword-no-block.png)
+![Bot deleted the message](./examples/badword-block-0.png)
+![Bot timedout the user](./examples/badword-block-1.png)
 
 I did this whole thing using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.

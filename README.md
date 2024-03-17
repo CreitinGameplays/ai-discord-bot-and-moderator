@@ -51,11 +51,11 @@ python index.py
 ```
 
 - You can modify `badwords.txt` (add or remove words) for your own needs.
-- In this line (`index.py`), you can add user IDs that the bot will ignore from automod, for example your server staff members (admins, moderators...):
+- (`index.py`) In this line, you can add user IDs that the bot will ignore from automod, for example your server staff members (admins, moderators...):
 ```python
 exempt_user_ids = [775678427511783434] # list of IDs that will not be blocked by bot's automod (Server owner, staff members...)
 ```
-- In this line (`index.py`), you can modify things like changing to your own username (assuming you own the server), and other information.
+- (`index.py`) In these lines, you can modify things like changing to your own username (assuming you own the server), and other information.
 ```python
 # Bot Variables
 chat_history_limit = 50 # Defaults to 50 last messages in chat history (But it won't use the last 50 messages due characters limitation)

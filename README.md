@@ -25,4 +25,20 @@ Regarding automatic moderation, not every message that the bot detects negative 
 ![Bot deleted the message](./examples/badword-block-0.png)
 ![Bot timedout the user](./examples/badword-block-1.png)
 
+# How to start?
+
+- Make a `.env` file and inside it put your bot token, like this
+.env:
+```
+TOKEN=your-bot-token
+```
+- after that, run:
+```sh
+pip install -r requirements.txt
+```
+- and then:
+```sh
+python index.py
+```
+
 I did this whole thing using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.

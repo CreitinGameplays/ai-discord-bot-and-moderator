@@ -132,7 +132,7 @@ async def on_message(message):
        # Construct the API request URL with parameters
        params = {
          "text": user_request,
-         "style": style # Optional style parameter (default: "balanced")
+         "style": style 
        }
        full_api_url = f"{api_url}"
 
@@ -194,7 +194,7 @@ async def handle_bad_word(message, exact_words):
 
          warn_request = f"Discord-server-name:{server_name}\nDiscord-server-owner:{server_owner}\nDiscord-channel-name:{message.channel.name}\nYour-current-role:{role}\nNote:{note_warn}\nCurrent-user-message:\n{message.author}: {message.content.strip()}\nChat-History:\n{full_history}"
 
-           # Calculate maximum allowed length for chat history
+         # Calculate maximum allowed length for chat history
          max_history_length = 3700 - len(warn_request) - len("\nChat-History:\n")
 
          # Truncate chat history if necessary
@@ -204,7 +204,7 @@ async def handle_bad_word(message, exact_words):
 
          params = {
              "text": warn_request,
-             "style": style # Optional style parameter (default: "balanced")
+             "style": style 
          }
          full_api_url = f"{api_url}"
 
@@ -310,7 +310,7 @@ async def analyze_sentiment(message):
 
    params = {
        "text": warn_request,
-       "style": style # Optional style parameter (default: "balanced")
+       "style": style
    }
    full_api_url = f"{api_url}"
 

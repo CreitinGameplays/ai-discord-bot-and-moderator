@@ -375,7 +375,9 @@ async def handle_moderation(message, exact_words):
     Returns:
         True if a moderation action was taken (either for bad words or sentiment), False otherwise.
     """
-
+    if message.author.id in exempt_user_ids:
+        return # Skip filtering for exempt users
+    
     # Check for bad words
     if await handle_bad_word(message, exact_words):
         return True  # Moderation action taken (bad word)

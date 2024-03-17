@@ -1,11 +1,11 @@
 # uhhh what is this?
-This is a simple Discord bot made in Python that uses (this API)[https://api.freegpt4.ddns.net/] (GPT-4) for text generation.
+This is a simple Discord bot made in Python that uses [this API](https://api.freegpt4.ddns.net/) (GPT-4) for text generation.
 
 # ok, what can it do?
 It can:
 
 - The bot replies to the user when they mention, reply or say "youchat".
-- The bot uses (Vader sentiment analyzer)[https://github.com/cjhutto/vaderSentiment] for detecting negative messages and apply moderation, if message was offensive or harmful.
+- The bot uses [Vader sentiment analyzer](https://github.com/cjhutto/vaderSentiment) for detecting negative messages and apply moderation, if message was offensive or harmful.
 - The bot can detect badwords, deletes the user message and apply timeout automatically (but only if the user's message is intended to be offensive/harmful).
 - The bot can read chat history (but with limitations).
 

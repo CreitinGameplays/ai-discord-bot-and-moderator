@@ -31,11 +31,12 @@ exact_words = None # Initialize as None
 bad_words_file = "badwords.txt" # Replace with the actual path
 
 # Bot Variables
-chat_history_limit = 50 # Defaults to 50 last messages in chat history (But it won't use the last 50 messages due characters limitation)
+chat_history_limit = 20 # Defaults to 20 last messages in chat history (But it won't use the last 20 messages due characters limitation)
 server_owner = "creitingameplays" # Replace with your username
 role = "Server AI Assistant and Moderator you can only delete offensive/harmful messages and you timeout when detected"
-note = "PLEASE DO NOT generate large messages in chat."
-note_warn = "At the end of your message, say (ONLY in minutes) how long the user will be timed-out (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, PLEASE SAY 'Timeout-duration: 0 minutes', please. You can use Chat History for moderation."
+note = "completely avoid generating large messages in chat."
+note_warn = "At the end of your message, say (ONLY in minutes) how long the user will be timed-out (like 'timeout-time: x minutes') (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, JUST IGNORE AND DO NOT SAY THE TIMEOUT-TIME."
+style = "balanced" # Available: balanced, creative, precise (default is balanced)
 
 def parse_bad_words(bad_words_file):
  """Parses bad words from a text file, handling variants and exact matches.
@@ -131,7 +132,7 @@ async def on_message(message):
        # Construct the API request URL with parameters
        params = {
          "text": user_request,
-         "style": "precise" # Optional style parameter (default: "balanced")
+         "style": style # Optional style parameter (default: "balanced")
        }
        full_api_url = f"{api_url}"
 
@@ -139,7 +140,7 @@ async def on_message(message):
            request_chunks = [user_request[i:i+4000] for i in range(0, len(user_request), 4000)]
            full_response = ""
            for chunk in request_chunks:
-               params = {"text": chunk, "style": "balanced"}
+               params = {"text": chunk, "style": style}
                response = requests.get(full_api_url, params=params)
                response.raise_for_status() # Raise exception for non-2xx status codes
 
@@ -203,7 +204,7 @@ async def handle_bad_word(message, exact_words):
 
          params = {
              "text": warn_request,
-             "style": "precise" # Optional style parameter (default: "balanced")
+             "style": style # Optional style parameter (default: "balanced")
          }
          full_api_url = f"{api_url}"
 
@@ -211,7 +212,7 @@ async def handle_bad_word(message, exact_words):
              request_chunks = [warn_request[i:i+4000] for i in range(0, len(warn_request), 4000)]
              full_response = ""
              for chunk in request_chunks:
-                 params = {"text": chunk, "style": "precise"}
+                 params = {"text": chunk, "style": style}
                  response = requests.get(full_api_url, params=params)
                  response.raise_for_status() # Raise exception for non-2xx status codes
 
@@ -235,13 +236,13 @@ async def handle_bad_word(message, exact_words):
                timeout_str = match.group()
              else:
                print(f"Warning: Couldn't extract timeout duration from response: {generated_text}")
-             timeout_minutes = 1 # Default to 1 minute if extraction fails
+             timeout_minutes = 0 # Default to 0 minute if extraction fails
 
              try:
                timeout_minutes = int(timeout_str)
              except ValueError:
                print(f"Warning: Couldn't convert extracted timeout to integer: {timeout_str}")
-               timeout_minutes = 1 # Default to 1 minute if conversion fails
+               timeout_minutes = 0 # Default to 0 minute if conversion fails
 
              if timeout_minutes > 0:
                await message.delete()
@@ -309,7 +310,7 @@ async def analyze_sentiment(message):
 
    params = {
        "text": warn_request,
-       "style": "precise" # Optional style parameter (default: "balanced")
+       "style": style # Optional style parameter (default: "balanced")
    }
    full_api_url = f"{api_url}"
 
@@ -317,7 +318,7 @@ async def analyze_sentiment(message):
        request_chunks = [warn_request[i:i+4000] for i in range(0, len(warn_request), 4000)]
        full_response = ""
        for chunk in request_chunks:
-           params = {"text": chunk, "style": "precise"}
+           params = {"text": chunk, "style": style}
            response = requests.get(full_api_url, params=params)
            response.raise_for_status() # Raise exception for non-2xx status codes
 
@@ -341,13 +342,13 @@ async def analyze_sentiment(message):
            timeout_str = match.group()
        else:
            print(f"Warning: Couldn't extract timeout duration from response: {generated_text}")
-       timeout_minutes = 1 # Default to 1 minute if extraction fails
+       timeout_minutes = 0 # Default to 0 minute if extraction fails
 
        try:
            timeout_minutes = int(timeout_str)
        except ValueError:
            print(f"Warning: Couldn't convert extracted timeout to integer: {timeout_str}")
-           timeout_minutes = 1 # Default to 1 minute if conversion fails
+           timeout_minutes = 0 # Default to 0 minute if conversion fails
 
        if timeout_minutes > 0:
            await message.delete()

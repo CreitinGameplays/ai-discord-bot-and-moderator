@@ -41,5 +41,12 @@ pip install -r requirements.txt
 ```sh
 python index.py
 ```
+# why would I use this huh 
 
+it can be useful like if your server has few moderators or if they cannot be very active.
+yeah
+
+# why did i do this thing?
+
+idk I was bored and I had this idea lol
 I did this whole code using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.

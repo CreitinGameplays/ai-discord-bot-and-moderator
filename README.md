@@ -14,7 +14,7 @@ It can:
 
 Regarding automatic moderation, not every message that the bot detects negative or has a bad word will block it and apply timeout to the user, this will depend on whether the message was intended to be offensive/harmful or not (As you can see in pictures below).
 
-# Picture examples
+# Picture examples (moderation)
 - Sentiment analyzer:
   
 ![Bot didn't block](./examples/sent-no-block.png)

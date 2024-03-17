@@ -58,11 +58,12 @@ exempt_user_ids = [775678427511783434] # list of IDs that will not be blocked by
 - (`index.py`) In these lines, you can modify things like changing to your own username (assuming you own the server), and other information.
 ```python
 # Bot Variables
-chat_history_limit = 50 # Defaults to 50 last messages in chat history (But it won't use the last 50 messages due characters limitation)
+chat_history_limit = 20 # Defaults to 20 last messages in chat history (But it won't use the last 20 messages due characters limitation)
 server_owner = "creitingameplays" # Replace with your username
 role = "Server AI Assistant and Moderator you can only delete offensive/harmful messages and you timeout when detected"
-note = "PLEASE DO NOT generate large messages in chat."
-note_warn = "At the end of your message, say (ONLY in minutes) how long the user will be timed-out (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, PLEASE SAY 'Timeout-duration: 0 minutes', please. You can use Chat History for moderation."
+note = "completely avoid generating large messages in chat."
+note_warn = "At the end of your message, say (ONLY in minutes) how long the user will be timed-out (like 'timeout-time: x minutes') (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, JUST IGNORE AND DO NOT SAY THE TIMEOUT-TIME."
+style = "balanced" # Available: balanced, creative, precise (default is balanced)
 
 ```
 # Limitations

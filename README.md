@@ -10,7 +10,7 @@ It can:
 - The bot can read chat history (but with limitations).
 - the bot can decide for itself how long the user will be in timeout, depending on the severity of the message.
 
-Regarding automatic moderation, not every message that the bot detects is negative or has a bad word will block it and apply timeout to the user, this will depend on whether the message was intended to be offensive/harmful or not.
+Regarding automatic moderation, not every message that the bot detects negative or has a bad word will block it and apply timeout to the user, this will depend on whether the message was intended to be offensive/harmful or not (As you can see in pictures below).
 
 # Picture examples
 - Sentiment analyzer:

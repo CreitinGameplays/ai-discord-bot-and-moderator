@@ -27,8 +27,9 @@ Regarding automatic moderation, not every message that the bot detects negative 
 
 # How to start?
 
-- Make a `.env` file and inside it put your bot token, like this
-.env:
+- Make a `.env` file and inside it put your bot token, like this:\n
+
+.env
 ```
 TOKEN=your-bot-token
 ```
@@ -41,4 +42,4 @@ pip install -r requirements.txt
 python index.py
 ```
 
-I did this whole thing using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.
+I did this whole code using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.

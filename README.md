@@ -11,6 +11,6 @@ It can:
 
 Regarding automatic moderation, not every message that the bot detects is negative or has a bad word will block it and apply timeout to the user, this will depend on whether the message was intended to be offensive/harmful or not.
 
-# Moderation Examples
+# Pictures 
 
 I did this whole thing using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.

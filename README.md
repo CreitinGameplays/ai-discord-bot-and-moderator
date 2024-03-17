@@ -67,4 +67,4 @@ yeah
 idk I was bored and I had this idea lol
 I did this whole code using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.
 
-### [My Discord Server](https://discord.gg/pfa6RVxxUM)
+### ✨✨ [My Discord Server](https://discord.gg/pfa6RVxxUM) ✨✨

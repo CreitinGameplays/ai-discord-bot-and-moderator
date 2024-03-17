@@ -61,7 +61,7 @@ note_warn = "At the end of your message, say (ONLY in minutes) how long the user
 # Limitations
 - Bot doesn't work in DMs
 - Chat History is limited due character limit
-- Keep in mind that this uses a free API, so it may be unavailable at times (the funny HTTP 500 Server Error).
+- Keep in mind that it uses a free API, so it may be unavailable at times (the funny HTTP 500 Server Error).
 
 # Why would I use this huh 
 

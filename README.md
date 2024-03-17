@@ -8,9 +8,12 @@ It can:
 - The bot uses [Vader sentiment analyzer](https://github.com/cjhutto/vaderSentiment) for detecting negative messages and apply moderation, if message was offensive or harmful.
 - The bot can detect badwords, deletes the user message and apply timeout automatically (but only if the user's message is intended to be offensive/harmful).
 - The bot can read chat history (but with limitations).
+- the bot can decide for itself how long the user will be in timeout, depending on the severity of the message.
 
 Regarding automatic moderation, not every message that the bot detects is negative or has a bad word will block it and apply timeout to the user, this will depend on whether the message was intended to be offensive/harmful or not.
 
-# Pictures 
+# Pictures examples
+- Sentiment analyzer:
+![Bot didn't block](./examples/sent-no-block.png)
 
 I did this whole thing using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.

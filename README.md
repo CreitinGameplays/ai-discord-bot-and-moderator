@@ -63,6 +63,7 @@ server_owner = "creitingameplays" # Replace with your username
 role = "Server AI Assistant and Moderator you can only delete offensive/harmful messages and you timeout when detected"
 note = "PLEASE DO NOT generate large messages in chat."
 note_warn = "At the end of your message, say (ONLY in minutes) how long the user will be timed-out (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, PLEASE SAY 'Timeout-duration: 0 minutes', please. You can use Chat History for moderation."
+
 ```
 # Limitations
 - Bot doesn't work in DMs

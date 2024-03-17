@@ -27,9 +27,9 @@ Regarding automatic moderation, not every message that the bot detects negative 
 
 # How to start?
 
-- Make a `.env` file and inside it put your bot token, like this:\n
+- Make a `.env` file and inside it put your bot token, like this:
 
-.env
+`.env`:
 ```
 TOKEN=your-bot-token
 ```

@@ -41,6 +41,22 @@ pip install -r requirements.txt
 ```sh
 python index.py
 ```
+
+- You can modify `badwords.txt` (add or remove words) for your own needs.
+- In this line (`index.py`), you can add user IDs that the bot will ignore from automod, for example your server staff members (admins, moderators...):
+```python
+exempt_user_ids = [775678427511783434] # list of IDs that will not be blocked by bot's automod (Server owner, staff members...)
+```
+- In this line (`index.py`), you can modify things like changing to your own username (assuming you own the server), and other information.
+```python
+# Bot Variables
+chat_history_limit = 50 # Defaults to 50 last messages in chat history (But it won't use the last 50 messages due characters limitation)
+server_owner = "creitingameplays" # Replace with your username
+role = "Server AI Assistant and Moderator you can only delete offensive/harmful messages and you timeout when detected"
+note = "PLEASE DO NOT generate large messages in chat."
+note_warn = "At the end of your message, say (ONLY in minutes) how long the user will be timed-out (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, PLEASE SAY 'Timeout-duration: 0 minutes', please. You can use Chat History for moderation."
+```
+
 # why would I use this huh 
 
 it can be useful like if your server has few moderators or if they cannot be very active.

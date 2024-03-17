@@ -1,4 +1,4 @@
-# Simple Discord Bot with AI and Moderation 
+﻿# Simple Discord Bot with AI and Moderation 
 [![Discord Server](https://dcbadge.vercel.app/api/server/pfa6RVxxUM?style=flat)](https://discord.gg/pfa6RVxxUM) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 # Uhhh what is this?
 This is a simple Discord bot made in Python that uses [this API](https://api.freegpt4.ddns.net/) (GPT-4) for text generation.
@@ -58,6 +58,9 @@ role = "Server AI Assistant and Moderator you can only delete offensive/harmful 
 note = "PLEASE DO NOT generate large messages in chat."
 note_warn = "At the end of your message, say (ONLY in minutes) how long the user will be timed-out (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, PLEASE SAY 'Timeout-duration: 0 minutes', please. You can use Chat History for moderation."
 ```
+# limitations
+- Bot doesn't work in DMs
+- Chat History is limited due character limit
 
 # why would I use this huh 
 

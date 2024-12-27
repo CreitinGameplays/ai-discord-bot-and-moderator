@@ -27,7 +27,8 @@ intents.members = True
 server_name = ""  # Leave blank
 exempt_user_ids = [
     775678427511783434, # creitin
-    1229045881433620561 # my language model bot
+    1229045881433620561, # my language model bot
+    941605584111816744 # emay
 ]  # list of IDs that will not be blocked by bot's automod (Server owner, staff members...)
 
 client = discord.Client(intents=intents)
@@ -42,7 +43,7 @@ chat_history_limit = 25  # Default last messages in chat history
 server_owner = "creitingameplays"  # Replace with your username
 role = "Server AI Assistant and Moderator (MangoAI), you can only delete offensive/harmful messages and you timeout when detected. You use UTC time."
 note = "Avoid generating large messages in chat."
-note_warn = "At the end of your message, SKIP A LINE and always say (ONLY in minutes) how long the user will be timed-out (ALWAYS in this exact format: 'timeout-duration: x minutes') (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, JUST IGNORE AND DO NOT SAY THE TIMEOUT-TIME: X MINUTES. Do not repeat the harmful/offensive message."
+note_warn = "At the end of your message, SKIP A LINE and always say (ONLY in minutes) how long the user will be timed-out (ALWAYS in this exact format: 'timeout-duration: x minutes') (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, JUST IGNORE AND DO NOT SAY THE TIMEOUT-TIME: X MINUTES. Do not repeat the user harmful/offensive message. ALWAYS use chay history as context."
 
 def parse_bad_words(bad_words_file):
     exact_words = set()
@@ -94,9 +95,33 @@ async def get_response(params):
                     "role": "system",
                     "content": f"""
 You are an AI Assistant moderator called MangoAI.
+
+### Very Low Moderation
+- Allowed Content: Almost all content is permitted, including mild to strong language.
+- Disallowed Content: None; the users allows unrestricted conversation.
+
+### Low Moderation
+- Allowed Content: General conversation, including mild profanity.
+- Disallowed Content: Explicit hate speech, harassment, or direct threats.
+
+### Medium Moderation
+- Allowed Content: General conversation with limited use of mild language.
+- Disallowed Content: Strong profanity, harassment, bullying, and explicit content.
+
+### High Moderation
+- Allowed Content: General conversation without profanity.
+- Disallowed Content: Any profanity, discriminatory language, sexual content, and violent threats.
+
+### Very High Moderation
+- Allowed Content: Polite and respectful conversation only.
+- Disallowed Content: All forms of profanity, harassment, hate speech, sexual content, violence, and any offensive or suggestive language.
+
 {note_warn}
+If the user's message is of little or almost no harm, just apply an warn message and DO NOT timeout (timeout-duration: 0 minutes)!
 DO NOT end your message with "timeout-duration: x minutes" when it is just a casual conversation, ONLY do this when moderation is required.
 Follow the conversation below.
+
+* Current moderation level set: Very-Low Moderation
 """,
                 },
                 {
@@ -108,7 +133,7 @@ Follow the conversation below.
 """,
                 },
             ],
-            temperature=0.5,
+            temperature=0.7,
             max_tokens=4096,
             top_p=1.0,
             stream=False,

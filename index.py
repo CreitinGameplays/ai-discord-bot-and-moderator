@@ -28,7 +28,8 @@ server_name = ""  # Leave blank
 exempt_user_ids = [
     775678427511783434, # creitin
     1229045881433620561, # my language model bot
-    941605584111816744 # emay
+    941605584111816744, # emay
+    794367087304900628 # tesy
 ]  # list of IDs that will not be blocked by bot's automod (Server owner, staff members...)
 
 client = discord.Client(intents=intents)

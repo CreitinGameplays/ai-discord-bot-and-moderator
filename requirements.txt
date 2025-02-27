@@ -1,4 +1,4 @@
-discord
+py-cord
 requests
 python-dotenv
 vaderSentiment

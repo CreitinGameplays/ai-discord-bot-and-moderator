@@ -1,3 +1,4 @@
+groq
 py-cord
 requests
 python-dotenv

@@ -1,84 +1,121 @@
-﻿# Simple Discord Bot with AI and Moderation (deprecated)
-[![Discord Server](https://dcbadge.vercel.app/api/server/pfa6RVxxUM?style=flat)](https://discord.gg/pfa6RVxxUM) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-# Uhhh what is this?
-This is a simple Discord bot made in Python that uses [this API](https://api.freegpt4.ddns.net/) (GPT-4) for text generation and automod.
+# Discord AI Assistant & Moderator Bot
 
-# Ok, what can it do?
-It can:
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-- The bot replies to the user when they mention, reply or say "youchat".
-- The bot uses [VADER-Sentiment-Analysis](https://github.com/cjhutto/vaderSentiment) for detecting negative messages and apply moderation, if message was offensive or harmful.
-- The bot can detect badwords, deletes the user message and apply timeout automatically (but only if the user's message is intended to be offensive/harmful).
-- The bot can read chat history (but with limitations).
-- the bot can decide for itself how long the user will be in timeout, depending on the severity of the message.
+## Overview
+This is a Discord bot powered by Groq's LLama model for text generation and moderation. The bot uses VADER Sentiment Analysis to detect negative messages and includes customizable word filtering with an automated timeout system based on message severity.
 
-Regarding automatic moderation, not every message that the bot detects negative or has a bad word will block it and apply timeout to the user, this will depend on whether the message was intended to be offensive/harmful or not (As you can see in pictures below).
+## Features
+- **Responsive Interaction:** Replies when mentioned or when "mangoai" is typed. (Change it as needed)
+- **Sentiment Analysis:** Uses VADER Sentiment Analysis to detect negative or harmful messages.
+- **Bad Word Detection:** Customizable word list (in `badwords.txt`) for filtering offensive words.
+- **Automated Timeout System:** Deletes and times out users when harmful content is detected (timeouts are determined and returned by the AI model).
+- **Chat History Awareness:** Considers up to 30 previous messages for context.
+- **Message Edit Monitoring:** Moderates messages that have been edited.
+- **Welcome Message System:** Sends a welcome message in designated channels.
+- **Exempt User System:** Skips moderation for specified staff or admin users.
 
-# Picture examples (moderation)
-- Sentiment analyzer:
+## Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/CreitinGameplays123/ai-discord-bot-and-moderator
+   cd ai-discord-bot-and-moderator
+   ```
+
+2. **Create a `.env` file with your tokens:**
+   ```
+   TOKEN=your-discord-bot-token
+   GROQ_KEY=your-groq-api-key
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Run the bot:**
+   ```bash
+   python index.py
+   ```
+
+## Configuration
+
+### Exempt Users
+The bot skips moderation for exempt users. By default, the exempt user list is defined as:
+```python
+exempt_user_ids = [
+    775678427511783434  # creitin
+]
+```
+You can add more user IDs as needed, and roles IDs too.
+
+### Bot Settings
+Key variables in the main script ([index.py](index.py)):
+- **Chat History Limit:** Set to 30 messages (updated from 28).
+- **Server Owner:** `"creitingameplays"`
+- **Role Description:** 
+  ```
+  Server AI Assistant and Moderator (MangoAI), you are able to only delete offensive/harmful messages and you timeout when detected. You use UTC time.
+  ```
+- **Note:** `"Avoid generating large messages in chat."`
+- **Note Warning:** Instructs the AI on how to output timeout durations in the exact format (`timeout-duration: x minutes`).
+
+### Moderation Levels
+The bot supports multiple moderation levels which affect the response strategy (using system prompt):
+
+- **Very Low Moderation:**
+  - *Allowed Content:* Almost all content is permitted, including mild to strong language and usernames.
+  - *Action:* If harm is minor, a warning is issued with a timeout duration of 0 minutes.
   
-![Bot didn't block](./examples/sent-no-block.png)
-![Bot deleted the message](./examples/sent-block-0.png)
-![Bot timedout the user](./examples/sent-block-1.png)
+- **Low Moderation:**
+  - *Allowed Content:* General conversation with mild profanity allowed.
+  - *Disallowed Content:* Explicit hate speech, harassment, or direct threats.
+  
+- **Medium Moderation:**
+  - *Allowed Content:* General conversation with limited use of mild language.
+  - *Disallowed Content:* Strong profanity, bullying, and explicit content.
+  
+- **High Moderation:**
+  - *Allowed Content:* General conversation without any profanity.
+  - *Disallowed Content:* Any form of profanity, discriminatory language, sexual content, or violent threats.
+  
+- **Very High Moderation:**
+  - *Allowed Content:* Only polite and respectful conversation.
+  - *Disallowed Content:* All profanity, harassment, hate speech, sexual content, violence, and any offensive or suggestive language.
 
-- Badwords filtering:
+The current moderation level used in the system prompt is **Very Low Moderation**.
 
-![Bot didn't block](./examples/badword-no-block.png)
-![Bot deleted the message](./examples/badword-block-0.png)
-![Bot timedout the user](./examples/badword-block-1.png)
+## Detailed Features
 
-# How to start?
-- Clone this repository:
-```sh
-git clone https://github.com/CreitinGameplays123/ai-discord-bot-and-moderator
-```
-```sh
-cd ai-discord-bot-and-moderator
-```
-- Make a `.env` file and inside it put your bot token, like this:
+### Sentiment Analysis
+- **Technique:** Uses VADER Sentiment Analysis (via the [`SentimentIntensityAnalyzer`](index.py)) to compute message sentiment.
+- **Action:** If the compound sentiment score is below -0.5, the message is flagged as negative and moderation actions (warning and potential timeout) are applied.
 
-`.env`:
-```
-TOKEN=your-bot-token
-```
-- after that, run:
-```sh
-pip install -r requirements.txt
-```
-- and then:
-```sh
-python index.py
-```
+### Bad Word Detection
+- **Custom List:** Maintained in the `badwords.txt` file (exact word matching).
+- **Action:** Offensive words trigger the bot to send a warning and possibly timeout the user based on the AI-generated response.
 
-- You can modify `badwords.txt` (add or remove words) for your own needs.
-- (`index.py`) In this line, you can add user IDs that the bot will ignore from automod, for example your server staff members (admins, moderators...):
-```python
-exempt_user_ids = [775678427511783434] # list of IDs that will not be blocked by bot's automod (Server owner, staff members...)
-```
-- (`index.py`) In these lines, you can modify things like changing to your own username (assuming you own the server), and other information.
-```python
-# Bot Variables
-chat_history_limit = 20 # Defaults to 20 last messages in chat history (But it won't use the last 20 messages due characters limitation)
-server_owner = "creitingameplays" # Replace with your username
-role = "Server AI Assistant and Moderator you can only delete offensive/harmful messages and you timeout when detected"
-note = "completely avoid generating large messages in chat."
-note_warn = "At the end of your message, say (ONLY in minutes) how long the user will be timed-out (like 'timeout-time: x minutes') (you can timeout). If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, JUST IGNORE AND DO NOT SAY THE TIMEOUT-TIME."
-style = "balanced" # Available: balanced, creative, precise (default is balanced)
+### Timeout and Moderation Actions
+- The bot deletes messages containing harmful or offensive content.
+- It then times out the offending user based on the timeout duration specified in the AI response (e.g., `timeout-duration: 5 minutes`).
+- **Note:** The bot uses UTC time for the timeout schedule.
 
-```
-# Limitations
-- Bot doesn't work in DMs
-- Chat History is limited due character limit
-- Keep in mind that it uses a free API, so it may be unavailable at times (the funny HTTP 500 Server Error).
+### Message Edit Monitoring
+- If a message is edited, the bot re-evaluates it for offensive content and may carry out moderation actions.
 
-# Why would I use this huh 
+## Requirements
+- Python 3.6+
+- [py-cord](https://github.com/Pycord-Development/pycord)
+- Groq API access (free)
+- VADER Sentiment Analysis
+- Additional dependencies as listed in `requirements.txt`
 
-it can be useful like if your server has few moderators or if they cannot be very active.
-yeah
+## Limitations
+- No support for direct messages (DMs).
+- Chat history is limited to the last 30 messages.
+- Message size limit: 2000 characters per Discord message.
+- Groq API access is required for generating responses.
 
-# Why did i do this thing?
-
-idk I was bored and I had this idea lol.
-I did this whole code using [Google Gemini](https://gemini.google.com/) (Gemini was the coder lmao) and I modified tiny things in the code.
-
-### ✨✨ [My Discord Server](https://discord.gg/pfa6RVxxUM) ✨✨
+## License
+This project is licensed under the MIT License.

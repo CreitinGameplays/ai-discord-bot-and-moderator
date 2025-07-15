@@ -480,4 +480,635 @@ async def reload_cog(ctx, extension: str):
     Example: .reload mystats
     """
     try: 
-        is_
+        is_bot_owner = await client.is_owner(ctx.user)
+        if is_bot_owner:
+            client.reload_extension(f"cogs.{extension}")
+            await ctx.respond(f":white_check_mark: Successfully reloaded cog: {extension}", ephemeral=True)
+        else:
+            await ctx.respond(f":x: You don't have permission to run this command!", ephemeral=True)
+    except Exception as e:
+        await ctx.respond(f":x: Failed to reload cog {extension}. Reason: {e}", ephemeral=True)
+
+# dev only commands
+@client.command(
+    name="reset_db",
+    description="Resets the entire member_activity database (bot owner only)."
+)
+@commands.is_owner()
+async def reset_db(ctx: discord.ApplicationContext):
+    """
+    Resets the entire member_activity database by dropping and reinitializing the table.
+    Bot owner only command.
+    """
+    try:
+        conn = sqlite3.connect("activity.db")
+        c = conn.cursor()
+        c.execute("DROP TABLE IF EXISTS member_activity")
+        conn.commit()
+        conn.close()
+        # Reinitialize the database schema
+        init_db()
+        await ctx.respond(":white_check_mark: The member_activity database has been reset.", ephemeral=True)
+    except Exception as e:
+        await ctx.respond(f":x: Failed to reset the database. Reason: {e}", ephemeral=True)
+
+@reset_db.error
+async def reset_db_error(ctx: discord.ApplicationContext, error):
+    # If the user is not the bot owner, send an ephemeral permission message.
+    if isinstance(error, commands.NotOwner):
+        await ctx.respond(":x: You do not own this bot.", ephemeral=True)
+    else:
+        raise error
+
+
+@client.command(
+    name="set_activity",
+    description="Sets a custom activity percentage for a user (bot owner only)."
+)
+@commands.is_owner()
+async def set_activity(ctx: discord.ApplicationContext, user: discord.Member, percentage: float):
+    """
+    Sets a custom activity percentage for the selected user.
+    Use a percentage value between 0 and 100.
+    Bot owner only command.
+    """
+    try:
+        if percentage < 0 or percentage > 100:
+            await ctx.respond(":x: Percentage must be between 0 and 100.", ephemeral=True)
+            return
+
+        conn = sqlite3.connect("activity.db")
+        c = conn.cursor()
+        now = datetime.datetime.now(datetime.timezone.utc)
+        date_str = now.strftime("%Y-%m-%d")
+        c.execute("SELECT user_id FROM member_activity WHERE user_id=?", (str(user.id),))
+        row = c.fetchone()
+        if row:
+            c.execute(
+                "UPDATE member_activity SET activity_percentage=?, last_active=? WHERE user_id=?",
+                (percentage, now.isoformat(), str(user.id))
+            )
+        else:
+            c.execute(
+                "INSERT INTO member_activity (user_id, last_active, total_messages, messages_today, last_message_day, activity_percentage) VALUES (?, ?, ?, ?, ?, ?)",
+                (str(user.id), now.isoformat(), 0, 0, date_str, percentage)
+            )
+        conn.commit()
+        conn.close()
+        await ctx.respond(f":white_check_mark: Activity percentage for {user.display_name} has been set to {percentage:.2f}%.", ephemeral=True)
+    except Exception as e:
+        await ctx.respond(f":x: Failed to set custom activity for {user.display_name}. Reason: {e}", ephemeral=True)
+
+@set_activity.error
+async def set_activity_error(ctx: discord.ApplicationContext, error):
+    # If the user is not authorized (NotOwner), show an ephemeral message.
+    if isinstance(error, commands.NotOwner):
+        await ctx.respond(":x: You do not own this bot.", ephemeral=True)
+    else:
+        raise error
+
+@client.command(name="sync_messages", help="Reset and sync historical messages for leaderboard and mystats (owner only)")
+@commands.is_owner()
+async def sync_messages(ctx: discord.ApplicationContext):
+    """
+    Resets the message_history table, then iterates through every text channel
+    in allowed servers and updates the table with message counts for leaderboard
+    and mystats. It ignores messages sent by bots; all user messages are processed.
+    """
+    await ctx.respond("Starting reset and historical message sync for leaderboard/mystats...", ephemeral=True)
+    # Reset the message_history table
+    try:
+        conn = sqlite3.connect("activity.db")
+        c = conn.cursor()
+        c.execute("DROP TABLE IF EXISTS message_history")
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS message_history (user_id TEXT, date TEXT, count INTEGER, PRIMARY KEY (user_id, date))"
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e_reset:
+        await ctx.respond(f"Failed to reset message_history table: {e_reset}", ephemeral=True)
+        return
+
+    total_messages = 0
+    sync_start = datetime.datetime.now(datetime.timezone.utc)
+    for guild in client.guilds:
+        if guild.id not in ALLOWED_ACTIVITY_SERVERS:
+            continue
+        for channel in guild.text_channels:
+            try:
+                async for message in channel.history(limit=None, oldest_first=True):
+                    # Process all user messages (ignore only bots)
+                    if message.author.bot:
+                        continue
+                    # ignore exempt role IDs:
+                    if is_user_exempt(message) == True:
+                        continue
+                    date_str = message.created_at.date().strftime("%Y-%m-%d")
+                    conn = sqlite3.connect("activity.db")
+                    c = conn.cursor()
+                    c.execute(
+                        "INSERT INTO message_history (user_id, date, count) VALUES (?, ?, 1) "
+                        "ON CONFLICT(user_id, date) DO UPDATE SET count=count+1",
+                        (str(message.author.id), date_str)
+                    )
+                    conn.commit()
+                    conn.close()
+                    total_messages += 1
+            except Exception as e_channel:
+                print(f"Error processing channel {channel.name} in guild {guild.name}: {e_channel}")
+    duration = datetime.datetime.now(datetime.timezone.utc) - sync_start
+    await ctx.respond(f"Historical message sync complete. Processed {total_messages} messages in {duration}.", ephemeral=True)
+
+@sync_messages.error
+async def sync_messages_error(ctx: discord.ApplicationContext, error):
+    # If the user is not authorized (NotOwner), show an ephemeral message.
+    if isinstance(error, commands.NotOwner):
+        await ctx.respond(":x: You do not own this bot.", ephemeral=True)
+    else:
+        raise error
+
+# generate the AI response
+async def get_response(params):
+    #print(f"DEBUG: Generating response for params: {params}")
+    # Initial conversation
+    messages = [
+        {
+            "role": "system",
+            "content": f"""
+You are a helpful AI Assistant called MangoAI. Your main goal is to assist user with their questions. You are also an AI moderator of this server that can timeout and delete user messages when required.
+Your source code: https://github.com/CreitinGameplays/ai-discord-bot-and-moderator
+
+### Very Low Moderation
+- Allowed Content: Almost all content is permitted, including mild to strong language and usernames.
+- Disallowed Content: Explict threats or harassments; the users allows unrestricted conversation.
+
+If you think the user doesn't deserve the timeout, it was a false positive or wasn't intended to be offensive/harmful, JUST IGNORE AND DON'T TIMEOUT AND DON'T CALL ANY FUNCTIONS! Always use chat history as context for moderation.
+if the user repeatedly breaks the rules in a row, apply timeout to them.
+If the user exemption status is 'True', do not apply any moderation actions or timeouts in your response.
+Follow the conversation below. DON'T send large messages.
+You are only allowed to reference message IDs that are present in the provided chat history. 
+Never invent or guess message IDs. If you need to delete a message, use the exact message_id from the chat history. You should also delete messages you consider spam.
+
+* Current moderation level set: **Very Low Moderation** - ALL mild profanity words are allowed in this mode. DON'T call any functions for warning messages only, just reply to the user message!
+You are able to delete messages by calling the function 'timeout_user' with the message ID. If you just need to delete the message without timeout, set the timeout_minutes to 0, otherwise set it to the required timeout duration in minutes (greater than 0).
+NEVER include the user detected message in your response, even if not harmful/offensive. DO NOT execute moderation actions (such as delete messages and timeout) if the user exempt is FALSE! You should only take moderation actions requests if the user exempt is True.
+"""
+        },
+        {
+            "role": "user",
+            "content": f"<conversation>\n{params}\n</conversation>"
+        }
+    ]
+
+    # Define the function schema in the new 'tools' format
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "timeout_user",
+                "description": "Delete a message and timeout its author for a given duration. Include the user ID, an optional message ID to delete and a custom timeout reason generated by the bot.",
+                "parameters": {
+                    "type": "object", 
+                    "properties": {
+                        "user_id": {
+                            "type": "string",
+                            "description": "The ID of the user to timeout"
+                        },
+                        "timeout_minutes": {
+                            "type": "integer",
+                            "description": "Number of minutes to timeout the user"
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "Timeout reason to display in server audit logs"
+                        },
+                        "message_id": {
+                            "type": "integer",
+                            "description": "The EXACT same ID of the message to delete manually"
+                        }
+                    },
+                    "required": ["reason", "message_id"]
+                }
+            }
+        }
+    ]
+
+    try:
+        # Initial API call that may return a function call
+        completion = client_nvidia.chat.completions.create(
+            model="meta/llama-3.3-70b-instruct",
+            messages=messages,
+            temperature=0.6,
+            max_tokens=4096,
+            top_p=0.95,
+            tools=tools,
+            tool_choice="auto",
+        )
+
+        choice = completion.choices[0].message
+
+        # If the model wants to call a function
+        if choice.tool_calls:
+            tool_call = choice.tool_calls[0]
+            # Parse the function call arguments
+            function_name = tool_call.function.name
+            args = json.loads(tool_call.function.arguments)
+            print(f"Function call: {function_name} with args: {args}")
+            # Convert user_id to integer if it's a string
+            if "user_id" in args and isinstance(args["user_id"], str):
+                args["user_id"] = int(args["user_id"])
+                
+            # Add the assistant's message to the history
+            messages.append(choice)
+
+            # Add function result to conversation
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "name": function_name,
+                "content": f"Action performed: {function_name} with args {args}"
+            })
+
+            # Make a follow-up API call to get final response
+            final_completion = client_nvidia.chat.completions.create(
+                model="meta/llama-3.3-70b-instruct",
+                messages=messages,
+                temperature=0.6,
+                max_tokens=4096,
+                top_p=0.9
+            )
+
+            # Return both the function call args and the follow-up response
+            return ("__FUNCTION_CALL__", args, final_completion.choices[0].message.content)
+
+        # If no function call, return the normal response
+        return choice.content.strip()
+
+    except Exception as e:
+        print(f"Error calling NVIDIA API: {e}")
+        return f"Sorry, something went wrong: {e}"
+        
+@client.event
+async def on_member_join(member):
+    guild_id = member.guild.id
+
+    # Send welcome message if the guild is configured for it.
+    if guild_id in welcome_channels:
+        channel_id = welcome_channels[guild_id]
+        channel = client.get_channel(channel_id)
+        if channel:
+            await channel.send(f"{member.mention}\n[Welcome!](https://autumn.revolt.chat/attachments/rTZlaYXDfVqccile_OmOO5ji9fpeD7gjYhkEecVF2J/Screenshot_20250117_131308_Discord.jpg)")
+
+    # If the guild is configured for activity tracking, reset activity to 100% for rejoining members.
+    if guild_id in client.ALLOWED_ACTIVITY_SERVERS:
+        conn = sqlite3.connect("activity.db")
+        c = conn.cursor()
+        now = datetime.datetime.now(datetime.timezone.utc)
+        date_str = now.strftime("%Y-%m-%d")
+        # Check if the user already has an activity record.
+        c.execute("SELECT user_id FROM member_activity WHERE user_id=?", (str(member.id),))
+        row = c.fetchone()
+        if row:
+            # Reset the activity record to 100% and update last_active timestamp.
+            c.execute("UPDATE member_activity SET last_active=?, activity_percentage=?, total_messages=0, messages_today=0, last_message_day=? WHERE user_id=?",
+                      (now.isoformat(), 100, date_str, str(member.id)))
+        else:
+            # Insert a fresh record with 100% activity.
+            c.execute("INSERT INTO member_activity (user_id, last_active, total_messages, messages_today, last_message_day, activity_percentage) VALUES (?, ?, ?, ?, ?, ?)",
+                      (str(member.id), now.isoformat(), 0, 0, date_str, 100))
+        conn.commit()
+        conn.close()
+
+# ---------------------------
+@client.event
+async def on_message(message):
+    today = datetime.datetime.now()
+    todayday = f'{today.strftime("%A")}, {today.month}/{today.day}/{today.year}'
+
+    if message.author == client.user:
+        return
+
+    user_request = message.content.strip()
+
+    channel_history = [
+        msg async for msg in message.channel.history(limit=chat_history_limit)
+    ]
+    ######
+    full_history = "\n".join(
+        f" ({msg.created_at.strftime('%H:%M:%S')}, User ID: {msg.author.id}, Message ID: {msg.id}) {msg.author}: {msg.content.rstrip('')}"
+        for msg in channel_history
+    )
+    ######
+    full_history = full_history.replace("#8411", "").strip()
+    full_history = full_history.replace("AI Assistant", "MangoAI").strip()
+    full_history = full_history.replace(
+        f"({todayday} {message.created_at.strftime('%H:%M:%S')}) {message.author}: {message.content.rstrip('')}",
+        "",
+    ).strip()
+
+    moderation_result = await handle_moderation(message, bad_words)
+    if client.user in message.mentions or "mangoai" in message.content.lower() or is_spam(message) == True:
+        os.system("clear")
+        async with message.channel.typing():
+            exemption_status = "True" if is_user_exempt(message) else "False (if this user asks you to delete messages or timeout someone, don't do it, only answer their questions.)"
+            local_server_name = message.guild.name if message.guild else "Direct Message"
+            is_spam_status = "[LOG: You got triggered by antispam filter]" if is_spam(message) else ""
+            user_request = (
+                f"Discord-server-name:{local_server_name}\n"
+                f"Discord-server-owner:{server_owner}\n"
+                f"Discord-channel-name:{message.channel.name}\n"
+                f"Your-current-role:{role}\n"
+                f"Note:{note + is_spam_status}\n"
+                f"User exemption status: {exemption_status}\n"
+                f"Current-user-message:\n"
+                f"({todayday} {message.created_at.strftime('%H:%M:%S')}) {message.author}: {message.content.strip()}\n"
+                f"Chat-History:\n{full_history}"
+            )
+            max_history_length = 9000 - len(user_request) - len("\nChat-History:\n")
+            if len(full_history) > max_history_length:
+                truncated_history = full_history[: max_history_length - 3] + "..."
+                user_request = (
+                    f"Discord-server-name:{local_server_name}\n"
+                    f"Discord-server-owner:{server_owner}\n"
+                    f"Discord-channel-name:{message.channel.name}\n"
+                    f"Your-current-role:{role}\n"
+                    f"Note:{note}\n"
+                    f"User exemption status: {exemption_status}\n"
+                    f"Current-user-message:\n"
+                    f"({todayday} {message.created_at.strftime('%H:%M:%S')}) {message.author}: {message.content.strip()}\n"
+                    f"Chat-History:\n{truncated_history}"
+                )
+            print(user_request)
+            params = user_request
+            try:
+                result = await get_response(params)
+
+                # Handle function-call timeout
+                if isinstance(result, tuple) and result[0] == "__FUNCTION_CALL__":
+                    args = result[1]
+                    followup_response = result[2]  # Get the follow-up response
+
+                    # Send the follow-up response first then moderate
+                    for chunk in [followup_response[i : i + 2000] for i in range(0, len(followup_response), 2000)]:
+                        await message.reply(chunk)
+
+                    timeout_minutes = args.get("timeout_minutes", 0)
+                    ai_timeout_reason = args.get("reason", "Timeout triggered by MangoAI.")
+                    target_user_id = args.get("user_id")
+                    delete_message_id = args.get("message_id")
+                    # Only delete if a valid message_id is provided.
+                    if delete_message_id:
+                        message_to_delete = await message.channel.fetch_message(int(delete_message_id))
+                        await message_to_delete.delete()
+                    else:
+                        print("No valid message_id provided; skipping deletion.")
+                    duration = datetime.datetime.utcnow() + datetime.timedelta(minutes=timeout_minutes)
+                    reason_str = f"{ai_timeout_reason} (UserID: {target_user_id})"
+                    target_member = message.guild.get_member(target_user_id)
+                    if target_member:
+                        await target_member.timeout(until=duration, reason=reason_str)
+                    else:
+                        print(f"Target member with user ID {target_user_id} not found in guild.")
+
+                # Otherwise, normal reply
+                for chunk in [result[i : i + 2000] for i in range(0, len(result), 2000)]:
+                    await message.reply(chunk)
+
+            except discord.HTTPException as e:
+                print(f"Error during moderation or timeout: {e}")
+            return True
+
+    # If the message is not from an allowed server, skip activity tracking.
+    if message.guild and message.guild.id not in ALLOWED_ACTIVITY_SERVERS:
+        return
+
+    if is_user_exempt(message):
+        print(f"User {message.author} is exempt from moderation.")
+
+    # Only update activity if the user is NOT exempt from the activity check.
+    if not is_spam(message) and not is_user_activity_exempt(message):
+        update_user_activity(message.author.id, message.created_at, message.content)
+
+        # --- Per-day message count tracking for the bar chart ---
+        date_str = message.created_at.date().strftime("%Y-%m-%d")
+        conn = sqlite3.connect("activity.db")
+        c = conn.cursor()
+        # Ensure table exists
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS message_history (user_id TEXT, date TEXT, count INTEGER, PRIMARY KEY (user_id, date))"
+        )
+        # Upsert the message count for the day
+        c.execute(
+            "INSERT INTO message_history (user_id, date, count) VALUES (?, ?, 1) "
+            "ON CONFLICT(user_id, date) DO UPDATE SET count=count+1",
+            (str(message.author.id), date_str),
+        )
+        conn.commit()
+        conn.close()
+
+    #else:
+        #print(f"DEBUG: Skipping activity update for user {message.author}")
+
+    return False
+
+@client.event
+async def on_message_delete(message):
+    """When a message is deleted, decrement the activity counter and activity percentage."""
+    if message.author == client.user:
+        return
+    decrement_user_activity(message.author.id, message.created_at, message.content)
+
+@client.event
+async def on_message_edit(before, after):
+    if before.content == after.content:
+        return
+    if after.author == client.user:
+        return
+    print(f"Message edited by {after.author}:")
+    print(f"Before: {before.content}")
+    print(f"After: {after.content}")
+    moderation_result = await handle_moderation(after, bad_words)
+
+async def handle_bad_word(message, exact_words):
+    try:
+        today = datetime.datetime.now()
+        todayday = f'{today.strftime("%A")}, {today.month}/{today.day}/{today.year}'
+        words = message.content.lower().split()
+        for word in words:
+            if word in exact_words:
+                print("Offensive word detected!")
+
+                # build chat history
+                channel_history = [msg async for msg in message.channel.history(limit=chat_history_limit)]
+                full_history = "\n".join(
+                    f" ({msg.created_at.strftime('%H:%M:%S')}, User ID: {msg.author.id}, Message ID: {msg.id}) {msg.author}: {msg.content.rstrip()}"
+                    for msg in channel_history
+                )
+                for old, new in [("#8411", ""), ("AI Assistant", "MangoAI")]:
+                    full_history = full_history.replace(old, new).strip()
+                full_history = full_history.replace(
+                    f"({todayday} {message.created_at.strftime('%H:%M:%S')}) "
+                    f"{message.author}: {message.content.rstrip()}",
+                    "",
+                ).strip()
+                local_server_name = message.guild.name if message.guild else "Direct Message"
+                # prepare the warning request payload
+                warn_request = (
+                    f"Discord-server-name:{local_server_name}\n"
+                    f"Discord-server-owner:{server_owner}\n"
+                    f"Discord-channel-name:{message.channel.name}\n"
+                    f"Your-current-role:{role}\n"
+                    f"Note:{note}\n"
+                    f"Current-user-message:\n"
+                    f"({todayday} {message.created_at.strftime('%H:%M:%S')}) "
+                    f"{message.author}: {message.content.strip()}\n"
+                    f"Chat-History:\n{full_history}"
+                )
+
+                # truncate if too long
+                max_len = 9000 - len(warn_request) - len("\nChat-History:\n")
+                if len(full_history) > max_len:
+                    truncated = full_history[: max_len - 3] + "..."
+                    warn_request = warn_request.rsplit("\nChat-History:\n", 1)[0] + f"\nChat-History:\n{truncated}"
+
+                # get AI response (may be function call for timeout)
+                result = await get_response(warn_request)
+                print("DEBUG: AI response from Groq:", result)
+                # if model called the timeout function
+                if isinstance(result, tuple) and result[0] == "__FUNCTION_CALL__":
+                    args = result[1]
+                    followup_response = result[2]  # Get the follow-up response
+
+                    # Send the follow-up response first then moderate
+                    for chunk in [followup_response[i : i + 2000] for i in range(0, len(followup_response), 2000)]:
+                        await message.reply(chunk)
+
+                    timeout_minutes = args.get("timeout_minutes", 0)
+                    ai_timeout_reason = args.get("reason", "Timeout triggered by MangoAI.")
+                    target_user_id = args.get("user_id")
+                    delete_message_id = args.get("message_id")
+                    # Only delete if a valid message_id is provided.
+                    if delete_message_id:
+                        message_to_delete = await message.channel.fetch_message(int(delete_message_id))
+                        await message_to_delete.delete()
+                    else:
+                        print("No valid message_id provided; skipping deletion.")
+                    duration = datetime.datetime.utcnow() + datetime.timedelta(minutes=timeout_minutes)
+                    reason_str = f"{ai_timeout_reason} (UserID: {target_user_id})"
+                    target_member = message.guild.get_member(target_user_id)
+                    if target_member:
+                        await target_member.timeout(until=duration, reason=reason_str)
+                    else:
+                        print(f"Target member with user ID {target_user_id} not found in guild.")
+
+                # otherwise send the assistant’s warning text
+                for chunk in [result[i : i + 2000] for i in range(0, len(result), 2000)]:
+                    await message.reply(chunk)
+                return True
+
+        return False
+    except Exception as e:
+        print(f"Error handling bad word: {e}")
+        return False
+
+async def analyze_sentiment(message):
+    today = datetime.datetime.now()
+    todayday = f'{today.strftime("%A")}, {today.month}/{today.day}/{today.year}'
+    text = message.content.strip()
+    analyzer = SentimentIntensityAnalyzer()
+    scores = analyzer.polarity_scores(text)
+    compound_score = scores["compound"]
+    try:
+        if compound_score < -0.5:
+            print("Negative message detected!", compound_score)
+
+            # build chat history
+            channel_history = [msg async for msg in message.channel.history(limit=chat_history_limit)]
+            full_history = "\n".join(
+                f" ({msg.created_at.strftime('%H:%M:%S')}, User ID: {msg.author.id}, Message ID: {msg.id}) {msg.author}: {msg.content.rstrip()}"
+                for msg in channel_history
+            )
+            for old, new in [("#8411", ""), ("AI Assistant", "MangoAI")]:
+                full_history = full_history.replace(old, new).strip()
+            full_history = full_history.replace(
+                f"({todayday} {message.created_at.strftime('%H:%M:%S')}) "
+                f"{message.author}: {message.content.rstrip()}",
+                "",
+            ).strip()
+            local_server_name = message.guild.name if message.guild else "Direct Message"
+            # prepare the warning request payload
+            warn_request = (
+                f"Discord-server-name:{local_server_name}\n"
+                f"Discord-server-owner:{server_owner}\n"
+                f"Discord-channel-name:{message.channel.name}\n"
+                f"Your-current-role:{role}\n"
+                f"Note:{note}\n"
+                f"Current-user-message:\n"
+                f"({todayday} {message.created_at.strftime('%H:%M:%S')}) "
+                f"{message.author}: {message.content.strip()}\n"
+                f"Chat-History:\n{full_history}"
+            )
+
+            # truncate if too long
+            max_len = 9000 - len(warn_request) - len("\nChat-History:\n")
+            if len(full_history) > max_len:
+                truncated = full_history[: max_len - 3] + "..."
+                warn_request = warn_request.rsplit("\nChat-History:\n", 1)[0] + f"\nChat-History:\n{truncated}"
+
+            # get AI response (may be function call for timeout)
+            result = await get_response(warn_request)
+
+            # if model called the timeout function
+            if isinstance(result, tuple) and result[0] == "__FUNCTION_CALL__":
+                args = result[1]
+                followup_response = result[2]  # Get the follow-up response
+
+                # Send the follow-up response first then moderate
+                for chunk in [followup_response[i : i + 2000] for i in range(0, len(followup_response), 2000)]:
+                    await message.reply(chunk)
+
+                timeout_minutes = args.get("timeout_minutes", 0)
+                ai_timeout_reason = args.get("reason", "Timeout triggered by MangoAI.")
+                target_user_id = args.get("user_id")
+                delete_message_id = args.get("message_id")
+                # Only delete if a valid message_id is provided.
+                if delete_message_id:
+                    message_to_delete = await message.channel.fetch_message(int(delete_message_id))
+                    await message_to_delete.delete()
+                else:
+                    print("No valid message_id provided; skipping deletion.")
+                duration = datetime.datetime.utcnow() + datetime.timedelta(minutes=timeout_minutes)
+                reason_str = f"{ai_timeout_reason} (UserID: {target_user_id})"
+                target_member = message.guild.get_member(target_user_id)
+                if target_member:
+                    await target_member.timeout(until=duration, reason=reason_str)
+                else:
+                    print(f"Target member with user ID {target_user_id} not found in guild.")
+
+            # otherwise send the assistant’s warning text
+            for chunk in [result[i : i + 2000] for i in range(0, len(result), 2000)]:
+                await message.reply(chunk)
+            return True
+        return False
+
+    except Exception as e:
+        print(f"Error analyzing sentiment: {e}")
+        return False
+
+async def handle_moderation(message, exact_words):
+    if is_user_exempt(message):
+        return  # Skip moderation for exempt users
+
+    # First, run the bad-word check.
+    badword_triggered = await handle_bad_word(message, exact_words)
+    
+    # Only check sentiment if no bad word was detected.
+    sentiment_triggered = False
+    if not badword_triggered:
+        sentiment_triggered = await analyze_sentiment(message)
+    
+    # Return True if either check triggered moderation, but never both.
+    return badword_triggered or sentiment_triggered
+    
+client.run(BOT_TOKEN)

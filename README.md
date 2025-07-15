@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
-This is a Discord bot powered by Groq's LLama model for text generation and moderation. The bot uses VADER Sentiment Analysis to detect negative messages and includes customizable word filtering with an automated timeout system based on message severity.
+This is a Discord bot powered by ~~Groq's~~ LLama model for text generation and moderation. The bot uses VADER Sentiment Analysis to detect negative messages and includes customizable word filtering with an automated timeout system based on message severity.
 
 ## Features
 - **Responsive Interaction:** Replies when mentioned or when "mangoai" is typed. (Change it as needed)
